@@ -8,20 +8,20 @@ Race against the clock and unleash powerful attacks by solving math problems! Th
 <title>Math Battle - Time Attack</title>
 <style id="n8k3qp">
 #canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
+ position: absolute;
+ top: 0;
+ left: 0;
 }
 #nameInput {
-  position: absolute;
-  left: 50%;
-  top: 70%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  font-size: 24px;
-  padding: 15px;
-  width: 60%;
-  max-width: 300px;
+ position: absolute;
+ left: 50%;
+ top: 70%;
+ transform: translate(-50%, -50%);
+ z-index: 10;
+ font-size: 24px;
+ padding: 15px;
+ width: 60%;
+ max-width: 300px;
 }
 </style>
 </head>
@@ -29,8 +29,8 @@ Race against the clock and unleash powerful attacks by solving math problems! Th
 <canvas id="canvas"></canvas>
 <input id="nameInput"
 type="text"
-placeholder="Enter your name (max 8, letters & numbers only)"
-maxlength="8"
+placeholder="Enter your name (max 6, letters & numbers only)"
+maxlength="6"
 inputmode="latin"
 autocomplete="off">
 <script>
@@ -75,6 +75,8 @@ let choice2XY = null;
 let choice3XY = null;
 let damageTimer = 30;
 let hiscore = JSON.parse(localStorage.getItem("mathhiscore")) || 0;
+let hiscores = JSON.parse(localStorage.getItem("mathhiscores")) || [];
+
 
 window.addEventListener("resize",(e) => {
 canvas.width = window.innerWidth;
@@ -114,31 +116,44 @@ usednum++;
 return answer.join("");
 }
 
+
 function getResult(answer) {
 answer = answer.replace(/×/g,"*");
 answer = answer.replace(/÷/g,"/");
 return eval(answer);
 }
 
+
 function mode0Action() {
 let arr = Object.values(data);
-let ranking = [];
+let allTimeRanking = arr;
+let thisMonthRanking = [];
 if (arr.length > 0) {
 for (let i of arr) {
 let year = new Date().getFullYear();
 let month = new Date().getMonth()+1;
 let monthnumber = year*12+month;
-if (monthnumber === i.month) ranking.push(i);
+if (monthnumber === i.month) thisMonthRanking.push(i);
 }
-if (ranking.length > 0) {
-ranking.sort((a,b) => b.score - a.score);
+if (thisMonthRanking.length > 0) {
+thisMonthRanking.sort((a,b) => b.score - a.score);
 let map = {};
-for (let r of ranking) {
-  if (!map[r.name] || map[r.name].score < r.score) {
-    map[r.name] = r;
-  }
+for (let r of thisMonthRanking) {
+ if (!map[r.name] || map[r.name].score < r.score) {
+   map[r.name] = r;
+ }
 }
-ranking = Object.values(map);
+thisMonthRanking = Object.values(map);
+}
+if (allTimeRanking.length > 0) {
+ allTimeRanking.sort((a,b) => b.score - a.score);
+ let map = {};
+ for (let r of allTimeRanking) {
+   if (!map[r.name] || map[r.name].score < r.score) {
+     map [r.name] = r;
+   }
+ }
+ allTimeRanking = Object.values(map);
 }
 }
 ctx.fillStyle = "blue";
@@ -164,18 +179,27 @@ ctx.fillText(i === 0? "Easy" : i === 1? "Normal" : "Hard",x+w/2,y+h/2);
 }
 ctx.fillText(`Hold for 1 second to quit!`,canvas.width/4,canvas.height*0.92);
 ctx.font = `${canvas.height*0.06}px sans-serif`;
-ctx.fillText(hiscore === 0? "" : `HISCORE: ${hiscore}`,canvas.width/4,canvas.height*0.8);
+ctx.fillText(hiscore === 0? "" : `Best HISCORE: ${hiscore}`,canvas.width/4,canvas.height*0.8);
+ctx.fillText(hiscores.length > 0? `Month HISCORE: ${hiscores[hiscores.length-1].score}` : "",canvas.width/4,canvas.height*0.65);
 ctx.font = `${canvas.height*0.06}px sans-serif`;
-ctx.fillText(`This Month’s Ranking`,canvas.width/4*3,canvas.height*0.3);
+ctx.fillText(`Month Ranking`,canvas.width*0.875,canvas.height*0.3);
 ctx.font = `${canvas.height*0.05}px sans-serif`;
 ctx.fillStyle = "black";
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
-for (let i = 0; i < Math.min(10,ranking.length); i++) {
-let text = `${i+1}. ${ranking[i].name}: ${ranking[i].score}`;
-ctx.fillText(text,canvas.width/4*3,canvas.height*0.4+i*canvas.height*0.05);
+for (let i = 0; i < Math.min(10,thisMonthRanking.length); i++) {
+let text = `${i+1}. ${thisMonthRanking[i].name}: ${thisMonthRanking[i].score}`;
+ctx.fillText(text,canvas.width*0.875,canvas.height*0.4+i*canvas.height*0.05);
+}
+ctx.font = `${canvas.height*0.06}px sans-serif`;
+ctx.fillText(`All Ranking`,canvas.width*0.625,canvas.height*0.3);
+ctx.font = `${canvas.height*0.05}px sans-serif`;
+for (let i = 0; i < Math.min(10,allTimeRanking.length); i++) {
+ let text = `${i+1}. ${allTimeRanking[i].name}: ${allTimeRanking[i].score}`;
+ ctx.fillText(text,canvas.width*0.625,canvas.height*0.4+i*canvas.height*0.05);
 }
 }
+
 
 function draw() {
 document.getElementById("nameInput").style.display = (mode === 9) ? "block" : "none";
@@ -383,7 +407,8 @@ ctx.font = `${canvas.height*0.1}px sans-serif`;
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
 ctx.fillStyle = "black";
-ctx.fillText(`HI SCORE!!`,canvas.width/2,canvas.height*0.2);
+let moji = score > hiscore? "Best SCORE!!" : "HI SCORE!!";
+ctx.fillText(moji,canvas.width/2,canvas.height*0.2);
 ctx.fillText(`Correct Answers: ${clear}/${problem}`,canvas.width/2,canvas.height*0.4);
 ctx.fillText(`SCORE: ${score}`,canvas.width/2,canvas.height*0.55);
 ctx.font = `${canvas.height*0.05}px sans-serif`;
@@ -395,14 +420,17 @@ ctx.fillText(`Send`,canvas.width*0.5,canvas.height*0.84);
 requestAnimationFrame(draw);
 }
 
+
 window.onload = () => {
-  draw();
+ draw();
 };
+
 
 document.getElementById("nameInput").addEventListener("input",(e) => {
 nameInput.value = nameInput.value.replace(/[^a-zA-Z0-9]/g, "");
 name = nameInput.value;
 });
+
 
 document.addEventListener("keydown",(e) => {
 const key = e.key;
@@ -483,8 +511,8 @@ let r = Math.floor(Math.random()*2);
 if (r === 0) choices = [result,result+1,result+10,result+11];
 else choices = [result,result-1,result-10,result-11];
 for (let i = choices.length-1; i >= 0; i--) {
-  let j = Math.floor(Math.random()*(i+1));
-  [choices[i],choices[j]] = [choices[j],choices[i]];
+ let j = Math.floor(Math.random()*(i+1));
+ [choices[i],choices[j]] = [choices[j],choices[i]];
 }
 selectedchoice = 5;
 timer4();
@@ -494,7 +522,7 @@ enemies[difficult-1].realhp = enemies[difficult-1].maxhp;
 name = "";
 let accuracy = clear/problem || 0;
 let accuracyBonus = Math.floor(accuracy*500);
-let timeBonus = 2000-totalTime*10;
+let timeBonus = 6000-totalTime*30;
 score = Math.max(10,score-50*unclear);
 score += accuracyBonus;
 score += timeBonus;
@@ -502,6 +530,18 @@ score *= difficult;
 score = Math.max(10,score);
 if (score > hiscore) mode = 9;
 else mode = 8;
+let year = new Date().getFullYear();
+let month = new Date().getMonth()+1;
+let monthnumber = year*12+month;
+if (hiscores.length > 0 && monthnumber === hiscores[hiscores.length-1]?.month) {
+ let lastScore = hiscores[hiscores.length-1].score;
+ if (score > lastScore) {
+   hiscores[hiscores.length-1] = {score, month: monthnumber};
+ }
+}else{
+ hiscores.push({score,month: monthnumber});
+}
+localStorage.setItem("mathhiscores", JSON.stringify(hiscores));
 hiscore = Math.max(hiscore,score);
 localStorage.setItem("mathhiscore",hiscore);
 }
@@ -512,6 +552,7 @@ sendScore(name,score);
 mode = 0;
 }
 });
+
 
 canvas.addEventListener("click",(e) => {
 const rect = canvas.getBoundingClientRect();
@@ -605,8 +646,8 @@ let r = Math.floor(Math.random()*2);
 if (r === 0) choices = [result,result+1,result+10,result+11];
 else choices = [result,result-1,result-10,result-11];
 for (let i = choices.length-1; i >= 0; i--) {
-  let j = Math.floor(Math.random()*(i+1));
-  [choices[i],choices[j]] = [choices[j],choices[i]];
+ let j = Math.floor(Math.random()*(i+1));
+ [choices[i],choices[j]] = [choices[j],choices[i]];
 }
 selectedchoice = 5;
 timer4();
@@ -616,7 +657,7 @@ enemies[difficult-1].realhp = enemies[difficult-1].maxhp;
 name = "";
 let accuracy = clear / problem;
 let accuracyBonus = Math.floor(accuracy * 500);
-let timeBonus = 2000-totalTime*10;
+let timeBonus = 6000-totalTime*30;
 score = Math.max(10,score-50*unclear);
 score += accuracyBonus;
 score += timeBonus;
@@ -624,6 +665,20 @@ score *= difficult;
 score = Math.max(10,score);
 if (score > hiscore) mode = 9;
 else mode = 8;
+let year = new Date().getFullYear();
+let month = new Date().getMonth()+1;
+let monthnumber = year*12+month;
+if (hiscores.length > 0 && monthnumber === hiscores[hiscores.length-1]?.month) {
+ let lastScore = hiscores[hiscores.length-1].score;
+ if (score > lastScore) {
+   hiscores[hiscores.length-1] = {score, month: monthnumber};
+   mode = 9;
+ }
+}else{
+ hiscores.push({score,month: monthnumber});
+ mode = 9;
+}
+localStorage.setItem("mathhiscores", JSON.stringify(hiscores));
 hiscore = Math.max(hiscore,score);
 localStorage.setItem("mathhiscore", hiscore);
 }
@@ -641,10 +696,12 @@ mode = 0;
 }
 });
 
+
 canvas.addEventListener("touchstart",startPress);
 canvas.addEventListener("mousedown",startPress);
 canvas.addEventListener("touchend",endPress);
 canvas.addEventListener("mouseup",endPress);
+
 
 function startPress() {
 pressTimer = setTimeout(() => {
@@ -661,9 +718,11 @@ setTimeout(() => {mode = 0;},1000);
 },1000);
 }
 
+
 function endPress() {
 if (mode >= 3 && mode <= 7 && mode !== 4) clearTimeout(pressTimer);
 }
+
 
 function timer3() {
 let damage = 0;
@@ -680,6 +739,7 @@ clearInterval(timerID3);
 },50);
 }
 
+
 function timer2() {
 time2 = 3;
 timerID2 = setInterval(() => {
@@ -692,8 +752,8 @@ let r = Math.floor(Math.random()*2);
 if (r === 0) choices = [result,result+1,result+10,result+11];
 else choices = [result,result-1,result-10,result-11];
 for (let i = choices.length-1; i >= 0; i--) {
-  let j = Math.floor(Math.random()*(i+1));
-  [choices[i],choices[j]] = [choices[j],choices[i]];
+ let j = Math.floor(Math.random()*(i+1));
+ [choices[i],choices[j]] = [choices[j],choices[i]];
 }
 selectedchoice = 5;
 timer4();
@@ -701,6 +761,7 @@ clearInterval(timerID2);
 }
 },1000);
 }
+
 
 function timer5() {
 timerID5 = setInterval(() => {
@@ -727,6 +788,7 @@ choice3XY = {x: nowX,y: nowY,w: nowW,h: nowH};
 },50);
 }
 
+
 function timer4() {
 time4 = Math.min(20,difficult*10);
 timerID4 = setInterval(() => {
@@ -746,12 +808,14 @@ clearInterval(timerID4);
 },1000);
 }
 
+
 timerID6 = setInterval(() => {
 if (mode === 5 && difficult === 3) {
-  enemies[difficult-1].realhp = Math.min(enemies[difficult-1].maxhp,enemies[difficult-1].realhp + 5);
-  enemies[difficult-1].hp = enemies[difficult-1].realhp;
+ enemies[difficult-1].realhp = Math.min(enemies[difficult-1].maxhp,enemies[difficult-1].realhp + 5);
+ enemies[difficult-1].hp = enemies[difficult-1].realhp;
 }
 }, 3000);
+
 
 function sendScore(name2,score2) {
 let year = new Date().getFullYear();
@@ -765,30 +829,34 @@ month: monthnumber
 }
 </script>
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-  import { getDatabase,ref,push,onValue} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
-  const firebaseConfig = {
-    apiKey: "AIzaSyDzZqE0jApUOlt73_fywU7_lyyLzsR7qcA",
-    authDomain: "date-bbe1b.firebaseapp.com",
-    databaseURL: "https://date-bbe1b-default-rtdb.firebaseio.com",
-    projectId: "date-bbe1b",
-    storageBucket: "date-bbe1b.firebasestorage.app",
-    messagingSenderId: "892728163379",
-    appId: "1:892728163379:web:3f3b5bcb0f8bbda35a7746",
-    measurementId: "G-5B0T2C2XQX"
-  };
+ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+ import { getDatabase,ref,push,onValue} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+ const firebaseConfig = {
+   apiKey: "AIzaSyDzZqE0jApUOlt73_fywU7_lyyLzsR7qcA",
+   authDomain: "date-bbe1b.firebaseapp.com",
+   databaseURL: "https://date-bbe1b-default-rtdb.firebaseio.com",
+   projectId: "date-bbe1b",
+   storageBucket: "date-bbe1b.firebasestorage.app",
+   messagingSenderId: "892728163379",
+   appId: "1:892728163379:web:3f3b5bcb0f8bbda35a7746",
+   measurementId: "G-5B0T2C2XQX"
+ };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
 
-  window.db = db;
-  window.ref = ref;
-  window.push = push;
-  window.onValue = onValue;
-  onValue(ref(db,"ranking"),(snapshot) => {
-    data = snapshot.val() || {};
-  })
+ // Initialize Firebase
+ const app = initializeApp(firebaseConfig);
+ const db = getDatabase(app);
+
+
+ window.db = db;
+ window.ref = ref;
+ window.push = push;
+ window.onValue = onValue;
+ onValue(ref(db,"ranking"),(snapshot) => {
+   data = snapshot.val() || {};
+ })
 </script>
 </body>
 </html>
+
+
